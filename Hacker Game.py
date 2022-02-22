@@ -8,14 +8,14 @@ DEFAULT_FONT_SIZE = 16
 SCREEN_TITLE = "Hacker Game"
 
 SPRITE_SCALING = 2
-PLAYER_MOVEMENT_SPEED = 5
+SPEED_MODIFIER = 2 # Change to speed up the status progression
+PLAYER_MOVEMENT_SPEED = 10
 
-HEALTH_NUMBER_OFFSET_X = 210
-HEALTH_NUMBER_OFFSET_Y = -17
-
-HEALTHBAR_WIDTH = 400
-HEALTHBAR_HEIGHT = 15
-HEALTHBAR_OFFSET_Y = -10
+STATUS_NUMBER_OFFSET_X = 210
+STATUS_NUMBER_OFFSET_Y = -17
+STATUS_WIDTH = 400
+STATUS_HEIGHT = 15
+STATUS_OFFSET_Y = -10
 
 # --- ---
 class StatusBar(arcade.Sprite):
@@ -32,8 +32,8 @@ class StatusBar(arcade.Sprite):
         """ Draw how much percent remains on the status """
         percent_string = f"{self.cur_progress:.0f}%"
         arcade.draw_text(percent_string,
-                         start_x=self.center_x + HEALTH_NUMBER_OFFSET_X,
-                         start_y=self.center_y + HEALTH_NUMBER_OFFSET_Y,
+                         start_x=self.center_x + STATUS_NUMBER_OFFSET_X,
+                         start_y=self.center_y + STATUS_NUMBER_OFFSET_Y,
                          font_size=14,
                          color=arcade.color.WHITE)
 
@@ -42,17 +42,17 @@ class StatusBar(arcade.Sprite):
         # Draw the 'unhealthy' background
         if self.cur_progress < self.max_progress:
             arcade.draw_rectangle_filled(center_x=self.center_x,
-                                         center_y=self.center_y + HEALTHBAR_OFFSET_Y,
-                                         width=HEALTHBAR_WIDTH,
+                                         center_y=self.center_y + STATUS_OFFSET_Y,
+                                         width=STATUS_WIDTH,
                                          height=3,
                                          color=arcade.color.BLACK)
 
-        # Calculate width based on health
-        health_width = HEALTHBAR_WIDTH * (self.cur_progress / self.max_progress)
-        arcade.draw_rectangle_filled(center_x=self.center_x - 0.5 * (HEALTHBAR_WIDTH - health_width),
+        # Calculate width based on status
+        status_width = STATUS_WIDTH * (self.cur_progress / self.max_progress)
+        arcade.draw_rectangle_filled(center_x=self.center_x - 0.5 * (STATUS_WIDTH - status_width),
                                      center_y=self.center_y - 10,
-                                     width=health_width,
-                                     height=HEALTHBAR_HEIGHT,
+                                     width=status_width,
+                                     height=STATUS_HEIGHT,
                                      color=self.colour)
 
 
@@ -86,10 +86,15 @@ class HackerGame(arcade.Window):
         self.scene = None
 
         # Set up the sprite list
-        self.bar_list = None
+        self.bar_list = None           # Status bars
+        self.room_objects_list = None  # Objects in the room
         
         # Set up the sprite info
         self.player_sprite = None
+        self.computer_sprite = None
+        self.bathroom_sprite = None
+        self.fridge_sprite = None
+        self.bed_sprite = None
         
         # Set the physics engine
         self.physics_engine = None
@@ -100,6 +105,8 @@ class HackerGame(arcade.Window):
         # Track the current state of what key is pressed
         self.left_pressed = False
         self.right_pressed = False
+        # Check if the player can move
+        self.space_pressed = False
 
         # Set the background color
         arcade.set_background_color(arcade.color.CHARLESTON_GREEN)
@@ -110,6 +117,7 @@ class HackerGame(arcade.Window):
         # Initialize Scene
         self.scene = arcade.Scene()
         self.bar_list = arcade.SpriteList()
+        self.room_objects_list = arcade.SpriteList()
         # Create the camera
         self.camera = arcade.Camera(self.width, self.height)
 
@@ -119,9 +127,34 @@ class HackerGame(arcade.Window):
 
         # Set up the player
         self.player_sprite = Player(":resources:images/animated_characters/female_person/femalePerson_idle.png", SPRITE_SCALING)
-        self.player_sprite.center_x = 1000
+        self.player_sprite.center_x = 1400
         self.player_sprite.center_y = SCREEN_WIDTH / 2 - 200 #70
         self.scene.add_sprite("Player", self.player_sprite)
+
+        # Set up computer table to hack
+        self.computer_sprite = arcade.Sprite("Floorboards.png", .1)
+        self.computer_sprite.center_x = 1600
+        self.computer_sprite.center_y = SCREEN_WIDTH / 2 - 200
+        self.room_objects_list.append(self.computer_sprite)
+
+        # Set up bathroom
+        self.bathroom_sprite = arcade.Sprite("Floorboards.png", .1)
+        self.bathroom_sprite.center_x = 1200
+        self.bathroom_sprite.center_y = SCREEN_WIDTH / 2 - 200
+        self.room_objects_list.append(self.bathroom_sprite)
+
+        # Set up fridge
+        self.fridge_sprite = arcade.Sprite("Floorboards.png", .1)
+        self.fridge_sprite.center_x = 900
+        self.fridge_sprite.center_y = SCREEN_WIDTH / 2 - 200
+        self.room_objects_list.append(self.fridge_sprite)
+
+        # Set up bed
+        self.bed_sprite = arcade.Sprite("Floorboards.png", .1)
+        self.bed_sprite.center_x = 600
+        self.bed_sprite.center_y = SCREEN_WIDTH / 2 - 200
+        self.room_objects_list.append(self.bed_sprite)
+
 
         # Place the floor
         for x in range(0, 2000, 480):
@@ -140,10 +173,10 @@ class HackerGame(arcade.Window):
             self.scene.add_sprite("Walls", wall)
         
         # Set up status bars
-        bar1 = self.make_status_bars(arcade.color.YELLOW,     100, 100, 230, 320, 0)
-        bar2 = self.make_status_bars(arcade.color.RED_ORANGE, 100, 100, 230, 320, 1)
-        bar3 = self.make_status_bars(arcade.color.BLUE,       100, 100, 230, 320, 2)
-        progress_bar = self.make_status_bars(arcade.color.GREEN, 0, 100, 0, -170, 0)
+        bar1 = self.make_status_bars(arcade.color.YELLOW,     100, 100, 230, 320, 0) # 
+        bar2 = self.make_status_bars(arcade.color.RED_ORANGE, 100, 100, 230, 320, 1) # Hunger
+        bar3 = self.make_status_bars(arcade.color.BLUE,       100, 100, 230, 320, 2) # Sleep
+        progress_bar = self.make_status_bars(arcade.color.GREEN, 0, 100, 0, -170, 0) # Hacking Progress
 
         # Set those status bars to a list
         self.bar_list.append(bar1)
@@ -181,8 +214,9 @@ class HackerGame(arcade.Window):
         self.camera.use()
 
         # Draw our Scene
-        self.scene.draw()
         self.bar_list.draw()
+        self.room_objects_list.draw()
+        self.scene.draw()
 
         # Draw the progress bars
         for bar in self.bar_list:
@@ -207,11 +241,35 @@ class HackerGame(arcade.Window):
                     with a specific object, the proper
                     bars fill back up.
         """
-        self.bar_list[0].cur_progress -= .04
-        self.bar_list[1].cur_progress -= .02
-        self.bar_list[2].cur_progress -= .01
+        self.bar_list[0].cur_progress -= .05 * SPEED_MODIFIER
+        self.bar_list[1].cur_progress -= .03 * SPEED_MODIFIER
+        self.bar_list[2].cur_progress -= .01 * SPEED_MODIFIER
 
-        self.bar_list[3].cur_progress += .01
+
+        colliding_bathroom = arcade.check_for_collision(self.player_sprite, self.bathroom_sprite)
+        if colliding_bathroom and self.space_pressed:
+            self.bar_list[0].cur_progress += .3 * SPEED_MODIFIER
+            if self.bar_list[0].cur_progress >= 100:
+                self.bar_list[0].cur_progress = 100
+
+        colliding_fridge = arcade.check_for_collision(self.player_sprite, self.fridge_sprite)
+        if colliding_fridge and self.space_pressed:
+            self.bar_list[1].cur_progress += .18 * SPEED_MODIFIER
+            if self.bar_list[1].cur_progress >= 100:
+                self.bar_list[1].cur_progress = 100
+
+        colliding_bed = arcade.check_for_collision(self.player_sprite, self.bed_sprite)
+        if colliding_bed and self.space_pressed:
+            self.bar_list[2].cur_progress += .06 * SPEED_MODIFIER
+            if self.bar_list[2].cur_progress >= 100:
+                self.bar_list[2].cur_progress = 100
+                
+        colliding_computer = arcade.check_for_collision(self.player_sprite, self.computer_sprite)
+        if colliding_computer and self.space_pressed:
+            self.bar_list[3].cur_progress += .02 * SPEED_MODIFIER
+            if self.bar_list[3].cur_progress >= 100:
+                self.bar_list[3].cur_progress = 100
+                print("You win!")
 
 
     def update_player_speed(self):
@@ -227,10 +285,13 @@ class HackerGame(arcade.Window):
 
     def on_key_press(self, key, modifiers):
         """Called whenever a key is pressed. """
-        if key == arcade.key.LEFT :
+        if key == arcade.key.SPACE:
+            self.space_pressed = not self.space_pressed
+
+        if key == arcade.key.LEFT and not self.space_pressed:
             self.left_pressed = True
             self.update_player_speed()
-        elif key == arcade.key.RIGHT:
+        elif key == arcade.key.RIGHT and not self.space_pressed:
             self.right_pressed = True
             self.update_player_speed()
 
