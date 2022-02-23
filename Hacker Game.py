@@ -127,37 +127,37 @@ class HackerGame(arcade.Window):
 
         # Set up the player
         self.player_sprite = Player(":resources:images/animated_characters/female_person/femalePerson_idle.png", SPRITE_SCALING)
-        self.player_sprite.center_x = 1400
-        self.player_sprite.center_y = SCREEN_WIDTH / 2 - 200 #70
+        self.player_sprite.center_x = 1800
+        self.player_sprite.center_y = SCREEN_HEIGHT / 2 - 53
         self.scene.add_sprite("Player", self.player_sprite)
 
         # Set up computer table to hack
-        self.computer_sprite = arcade.Sprite("Floorboards.png", .1)
-        self.computer_sprite.center_x = 1600
-        self.computer_sprite.center_y = SCREEN_WIDTH / 2 - 200
+        self.computer_sprite = arcade.Sprite("Computer.png", .3)
+        self.computer_sprite.center_x = 2000
+        self.computer_sprite.center_y = SCREEN_HEIGHT / 2 - 50
         self.room_objects_list.append(self.computer_sprite)
 
         # Set up bathroom
-        self.bathroom_sprite = arcade.Sprite("Floorboards.png", .1)
-        self.bathroom_sprite.center_x = 1200
-        self.bathroom_sprite.center_y = SCREEN_WIDTH / 2 - 200
+        self.bathroom_sprite = arcade.Sprite("Bathroom.png", .4)
+        self.bathroom_sprite.center_x = 1400
+        self.bathroom_sprite.center_y = SCREEN_HEIGHT / 2 + 20
         self.room_objects_list.append(self.bathroom_sprite)
 
         # Set up fridge
-        self.fridge_sprite = arcade.Sprite("Floorboards.png", .1)
-        self.fridge_sprite.center_x = 900
-        self.fridge_sprite.center_y = SCREEN_WIDTH / 2 - 200
+        self.fridge_sprite = arcade.Sprite("Fridge.png", .4)
+        self.fridge_sprite.center_x = 1000
+        self.fridge_sprite.center_y = SCREEN_HEIGHT / 2
         self.room_objects_list.append(self.fridge_sprite)
 
         # Set up bed
-        self.bed_sprite = arcade.Sprite("Floorboards.png", .1)
-        self.bed_sprite.center_x = 600
-        self.bed_sprite.center_y = SCREEN_WIDTH / 2 - 200
+        self.bed_sprite = arcade.Sprite("Bed.png", .28)
+        self.bed_sprite.center_x = 550
+        self.bed_sprite.center_y = SCREEN_WIDTH / 2 - 190
         self.room_objects_list.append(self.bed_sprite)
 
 
         # Place the floor
-        for x in range(0, 2000, 480):
+        for x in range(0, 3000, 480):
             wall = arcade.Sprite("Floorboards.png", .25)
             wall.center_x = x
             wall.center_y = SCREEN_HEIGHT / 8
@@ -165,10 +165,10 @@ class HackerGame(arcade.Window):
 
         # Put some crates on the ground
         # This shows using a coordinate list to place sprites
-        coordinate_list = [[355, SCREEN_HEIGHT/3], [1800, SCREEN_HEIGHT/3]]
+        coordinate_list = [[390, SCREEN_HEIGHT/4 + 1], [1980, SCREEN_HEIGHT/4 + 1]]
         for coordinate in coordinate_list:
             # Add a crate
-            wall = arcade.Sprite(":resources:images/tiles/boxCrate_double.png", 0.5)
+            wall = arcade.Sprite(":resources:images/tiles/boxCrate_double.png", 0.01)
             wall.position = coordinate
             self.scene.add_sprite("Walls", wall)
         
@@ -245,31 +245,69 @@ class HackerGame(arcade.Window):
         self.bar_list[1].cur_progress -= .03 * SPEED_MODIFIER
         self.bar_list[2].cur_progress -= .01 * SPEED_MODIFIER
 
-
+        # Check for bathroom collision
         colliding_bathroom = arcade.check_for_collision(self.player_sprite, self.bathroom_sprite)
         if colliding_bathroom and self.space_pressed:
+            # Change the sprites when the function is in use
+            self.bathroom_sprite.visible = False
+            self.player_sprite.visible = False
+            # Give the player more than what they lose, 6x as much
             self.bar_list[0].cur_progress += .3 * SPEED_MODIFIER
+            # Cap at 100
             if self.bar_list[0].cur_progress >= 100:
                 self.bar_list[0].cur_progress = 100
+        # Return sprites when function is not in use
+        if (not self.space_pressed):
+            self.bathroom_sprite.visible = True
+            self.player_sprite.visible = True
 
+        # Check for fridge collision
         colliding_fridge = arcade.check_for_collision(self.player_sprite, self.fridge_sprite)
         if colliding_fridge and self.space_pressed:
+            # Change the sprites when the function is in use
+            self.fridge_sprite.visible = False
+            self.player_sprite.visible = False
+            # Give the player more than what they lose, 6x as much
             self.bar_list[1].cur_progress += .18 * SPEED_MODIFIER
+            # Cap at 100
             if self.bar_list[1].cur_progress >= 100:
                 self.bar_list[1].cur_progress = 100
+        # Return sprites when function is not in use
+        if (not self.space_pressed):
+            self.fridge_sprite.visible = True
+            self.player_sprite.visible = True
 
+        # Check for bed collision
         colliding_bed = arcade.check_for_collision(self.player_sprite, self.bed_sprite)
         if colliding_bed and self.space_pressed:
+            # Change the sprites when the function is in use
+            self.bed_sprite.visible = False
+            self.player_sprite.visible = False
+            # Give the player more than what they lose, 6x as much
             self.bar_list[2].cur_progress += .06 * SPEED_MODIFIER
+            # Cap at 100
             if self.bar_list[2].cur_progress >= 100:
                 self.bar_list[2].cur_progress = 100
-                
+        # Return sprites when function is not in use
+        if (not self.space_pressed):
+            self.bed_sprite.visible = True
+            self.player_sprite.visible = True
+
+        # Check for computer collision 
         colliding_computer = arcade.check_for_collision(self.player_sprite, self.computer_sprite)
         if colliding_computer and self.space_pressed:
+            # Change the sprites when the function is in use
+            self.computer_sprite.visible = False
+            self.player_sprite.visible = False
+            # Give the player more than what they lose, 6x as much
             self.bar_list[3].cur_progress += .02 * SPEED_MODIFIER
+            # Cap at 100
             if self.bar_list[3].cur_progress >= 100:
                 self.bar_list[3].cur_progress = 100
-                print("You win!")
+        # Return sprites when function is not in use
+        if (not self.space_pressed):
+            self.computer_sprite.visible = True
+            self.player_sprite.visible = True
 
 
     def update_player_speed(self):
@@ -310,11 +348,11 @@ class HackerGame(arcade.Window):
         """ Camera follows the player """
         screen_center_x = self.player_sprite.center_x - (self.camera.viewport_width / 2)
 
-        # Don't let camera travel past 0 or 1300
+        # Don't let camera travel past the bounds of the map
         if screen_center_x < 0:
             screen_center_x = 0
-        elif screen_center_x > 1300:
-            screen_center_x = 1300
+        elif screen_center_x > 1600:
+            screen_center_x = 1600
         player_centered = screen_center_x, 0
 
         self.camera.move_to(player_centered)
@@ -327,7 +365,7 @@ class HackerGame(arcade.Window):
             if self.bar_list.center[0] > 280:
                 self.bar_list.move(-PLAYER_MOVEMENT_SPEED, 0)
         if self.right_pressed == True:
-            if self.bar_list.center[0] < 1530:
+            if self.bar_list.center[0] < 1728:
                 self.bar_list.move(PLAYER_MOVEMENT_SPEED, 0)
 
 
