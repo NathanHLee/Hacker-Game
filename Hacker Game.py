@@ -86,8 +86,9 @@ class HackerGame(arcade.Window):
         self.scene = None
 
         # Set up the sprite list
-        self.bar_list = None           # Status bars
-        self.room_objects_list = None  # Objects in the room
+        self.bar_list = None                # Status bars
+        self.room_objects_list = None       # Objects in the room
+        self.using_room_objects_list = None # Objects being used in the room
         
         # Set up the sprite info
         self.player_sprite = None
@@ -95,6 +96,11 @@ class HackerGame(arcade.Window):
         self.bathroom_sprite = None
         self.fridge_sprite = None
         self.bed_sprite = None
+        # Set up the 'in-use' sprite info
+        self.using_computer_sprite = None
+        self.using_bathroom_sprite = None
+        self.using_fridge_sprite = None
+        self.using_bed_sprite = None
         
         # Set the physics engine
         self.physics_engine = None
@@ -118,6 +124,7 @@ class HackerGame(arcade.Window):
         self.scene = arcade.Scene()
         self.bar_list = arcade.SpriteList()
         self.room_objects_list = arcade.SpriteList()
+        self.using_room_objects_list = arcade.SpriteList()
         # Create the camera
         self.camera = arcade.Camera(self.width, self.height)
 
@@ -142,6 +149,10 @@ class HackerGame(arcade.Window):
         self.bathroom_sprite.center_x = 1400
         self.bathroom_sprite.center_y = SCREEN_HEIGHT / 2 + 20
         self.room_objects_list.append(self.bathroom_sprite)
+        self.using_bathroom_sprite = arcade.Sprite("Using_Bathroom.png", .4)
+        self.using_bathroom_sprite.center_x = 1400
+        self.using_bathroom_sprite.center_y = SCREEN_HEIGHT / 2 + 20
+        self.using_room_objects_list.append(self.using_bathroom_sprite)
 
         # Set up fridge
         self.fridge_sprite = arcade.Sprite("Fridge.png", .4)
@@ -215,6 +226,7 @@ class HackerGame(arcade.Window):
 
         # Draw our Scene
         self.bar_list.draw()
+        self.using_room_objects_list.draw()
         self.room_objects_list.draw()
         self.scene.draw()
 
@@ -249,6 +261,7 @@ class HackerGame(arcade.Window):
         colliding_bathroom = arcade.check_for_collision(self.player_sprite, self.bathroom_sprite)
         if colliding_bathroom and self.space_pressed:
             # Change the sprites when the function is in use
+            self.using_bathroom_sprite.visible = True
             self.bathroom_sprite.visible = False
             self.player_sprite.visible = False
             # Give the player more than what they lose, 6x as much
@@ -258,6 +271,7 @@ class HackerGame(arcade.Window):
                 self.bar_list[0].cur_progress = 100
         # Return sprites when function is not in use
         if (not self.space_pressed):
+            self.using_bathroom_sprite.visible = False
             self.bathroom_sprite.visible = True
             self.player_sprite.visible = True
 
