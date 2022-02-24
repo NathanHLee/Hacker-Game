@@ -18,6 +18,50 @@ STATUS_HEIGHT = 15
 STATUS_OFFSET_Y = -10
 
 # --- ---
+class InstructionsView(arcade.View):
+    def on_show(self):
+        arcade.set_background_color(arcade.color.CHARLESTON_GREEN)
+        arcade.set_viewport(0, SCREEN_WIDTH, 0, SCREEN_HEIGHT)
+    
+    def on_draw(self):
+        self.clear()
+        arcade.draw_text("Instructions Screen", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2,
+                        arcade.color.WHITE, font_size=50, anchor_x="center")
+        arcade.draw_text("Click to advance", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 75,
+                        arcade.color.WHITE, font_size=20, anchor_x="center")
+    
+    def on_mouse_press(self, x, y, button, modifiers):
+        game_view = HackerGameView()
+        game_view.setup()
+        self.window.show_view(game_view)
+
+
+
+class GameOverView(arcade.View):
+    def __init__(self, condition):
+        super().__init__()
+        self.condition = condition
+        self.texture = arcade.load_texture("computer.png")
+
+        arcade.set_viewport(0, SCREEN_WIDTH - 1, 0, SCREEN_HEIGHT - 1)
+
+    def on_draw(self):
+        self.clear()
+        if self.condition == 1:
+            self.texture.draw_sized(SCREEN_WIDTH / 4, SCREEN_HEIGHT / 2, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
+            arcade.draw_text("Oh no", 
+                            SCREEN_WIDTH / 2, SCREEN_HEIGHT - 60,
+                            arcade.color.WHITE, 
+                            font_size=20, 
+                            anchor_x="center", multiline=True, width=600)
+
+    def on_mouse_press(self, x, y, button, modifiers):
+        game_view = InstructionsView()
+        game_view.on_show()
+        self.window.show_view(game_view)
+
+
+
 class StatusBar(arcade.Sprite):
     """ Sprite with hit points """
     def __init__(self, colour, cur_progress, max_progress):
@@ -77,10 +121,10 @@ class Player(arcade.Sprite):
 
 
 
-class HackerGame(arcade.Window):
+class HackerGameView(arcade.View):
     def __init__(self):
         """ Variables """
-        super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
+        super().__init__()
 
         # Our Scene Object
         self.scene = None
@@ -126,16 +170,16 @@ class HackerGame(arcade.Window):
         self.room_objects_list = arcade.SpriteList()
         self.using_room_objects_list = arcade.SpriteList()
         # Create the camera
-        self.camera = arcade.Camera(self.width, self.height)
+        self.camera = arcade.Camera(SCREEN_WIDTH, SCREEN_HEIGHT)
 
         # Create the Sprite lists
         self.scene.add_sprite_list("Player")
         self.scene.add_sprite_list("Walls", use_spatial_hash=True)
 
         # Set up the player
-        self.player_sprite = Player(":resources:images/animated_characters/female_person/femalePerson_idle.png", SPRITE_SCALING)
+        self.player_sprite = Player("CodeMonkey.png", .8)
         self.player_sprite.center_x = 1800
-        self.player_sprite.center_y = SCREEN_HEIGHT / 2 - 53
+        self.player_sprite.center_y = SCREEN_HEIGHT / 2 - 48
         self.scene.add_sprite("Player", self.player_sprite)
 
         # Set up computer table to hack
@@ -143,6 +187,10 @@ class HackerGame(arcade.Window):
         self.computer_sprite.center_x = 2000
         self.computer_sprite.center_y = SCREEN_HEIGHT / 2 - 50
         self.room_objects_list.append(self.computer_sprite)
+        self.using_computer_sprite = arcade.Sprite("Using_Computer.png", .3)
+        self.using_computer_sprite.center_x = 2000
+        self.using_computer_sprite.center_y = SCREEN_HEIGHT / 2 - 50
+        self.using_room_objects_list.append(self.using_computer_sprite)
 
         # Set up bathroom
         self.bathroom_sprite = arcade.Sprite("Bathroom.png", .4)
@@ -159,12 +207,20 @@ class HackerGame(arcade.Window):
         self.fridge_sprite.center_x = 1000
         self.fridge_sprite.center_y = SCREEN_HEIGHT / 2
         self.room_objects_list.append(self.fridge_sprite)
+        self.using_fridge_sprite = arcade.Sprite("Using_Fridge.png", .4)
+        self.using_fridge_sprite.center_x = 1000
+        self.using_fridge_sprite.center_y = SCREEN_HEIGHT / 2 + 25
+        self.using_room_objects_list.append(self.using_fridge_sprite)
 
         # Set up bed
         self.bed_sprite = arcade.Sprite("Bed.png", .28)
         self.bed_sprite.center_x = 550
         self.bed_sprite.center_y = SCREEN_WIDTH / 2 - 190
         self.room_objects_list.append(self.bed_sprite)
+        self.using_bed_sprite = arcade.Sprite("Using_Bed.png", .28)
+        self.using_bed_sprite.center_x = 550
+        self.using_bed_sprite.center_y = SCREEN_WIDTH / 2 - 190
+        self.room_objects_list.append(self.using_bed_sprite)
 
 
         # Place the floor
@@ -246,13 +302,13 @@ class HackerGame(arcade.Window):
         # Increase or decrease value of status
         self.update_status()
 
+        if self.bar_list[0].cur_progress <= 0:
+            view = GameOverView(1)
+            self.window.show_view(view)
+
 
     def update_status(self):
-        """ Update the status bars
-            *TODO: make it so when the player interacts
-                    with a specific object, the proper
-                    bars fill back up.
-        """
+        """ Update the status bars """
         self.bar_list[0].cur_progress -= .05 * SPEED_MODIFIER
         self.bar_list[1].cur_progress -= .03 * SPEED_MODIFIER
         self.bar_list[2].cur_progress -= .01 * SPEED_MODIFIER
@@ -279,6 +335,7 @@ class HackerGame(arcade.Window):
         colliding_fridge = arcade.check_for_collision(self.player_sprite, self.fridge_sprite)
         if colliding_fridge and self.space_pressed:
             # Change the sprites when the function is in use
+            self.using_fridge_sprite.visible = True
             self.fridge_sprite.visible = False
             self.player_sprite.visible = False
             # Give the player more than what they lose, 6x as much
@@ -288,6 +345,7 @@ class HackerGame(arcade.Window):
                 self.bar_list[1].cur_progress = 100
         # Return sprites when function is not in use
         if (not self.space_pressed):
+            self.using_fridge_sprite.visible = False
             self.fridge_sprite.visible = True
             self.player_sprite.visible = True
 
@@ -295,6 +353,7 @@ class HackerGame(arcade.Window):
         colliding_bed = arcade.check_for_collision(self.player_sprite, self.bed_sprite)
         if colliding_bed and self.space_pressed:
             # Change the sprites when the function is in use
+            self.using_bed_sprite.visible = True
             self.bed_sprite.visible = False
             self.player_sprite.visible = False
             # Give the player more than what they lose, 6x as much
@@ -304,6 +363,7 @@ class HackerGame(arcade.Window):
                 self.bar_list[2].cur_progress = 100
         # Return sprites when function is not in use
         if (not self.space_pressed):
+            self.using_bed_sprite.visible = False
             self.bed_sprite.visible = True
             self.player_sprite.visible = True
 
@@ -311,6 +371,7 @@ class HackerGame(arcade.Window):
         colliding_computer = arcade.check_for_collision(self.player_sprite, self.computer_sprite)
         if colliding_computer and self.space_pressed:
             # Change the sprites when the function is in use
+            self.using_computer_sprite.visible = True
             self.computer_sprite.visible = False
             self.player_sprite.visible = False
             # Give the player more than what they lose, 6x as much
@@ -320,6 +381,7 @@ class HackerGame(arcade.Window):
                 self.bar_list[3].cur_progress = 100
         # Return sprites when function is not in use
         if (not self.space_pressed):
+            self.using_computer_sprite.visible = False
             self.computer_sprite.visible = True
             self.player_sprite.visible = True
 
@@ -384,8 +446,9 @@ class HackerGame(arcade.Window):
 
 
 def main():
-    window = HackerGame()
-    window.setup()
+    window = arcade.Window(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
+    start_view = InstructionsView()
+    window.show_view(start_view)
     arcade.run()
 
 
