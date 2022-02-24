@@ -8,14 +8,18 @@ DEFAULT_FONT_SIZE = 16
 SCREEN_TITLE = "Hacker Game"
 
 SPRITE_SCALING = 2
-SPEED_MODIFIER = 2 # Change to speed up the status progression
-PLAYER_MOVEMENT_SPEED = 10
+SPEED_MODIFIER = 8 # Change to speed up the status progression
+PLAYER_MOVEMENT_SPEED = 3
 
 STATUS_NUMBER_OFFSET_X = 210
 STATUS_NUMBER_OFFSET_Y = -17
 STATUS_WIDTH = 400
 STATUS_HEIGHT = 15
 STATUS_OFFSET_Y = -10
+
+# Index of textures, first element faces left, second faces right
+TEXTURE_LEFT = 0
+TEXTURE_RIGHT = 1
 
 # --- ---
 class InstructionsView(arcade.View):
@@ -25,8 +29,13 @@ class InstructionsView(arcade.View):
     
     def on_draw(self):
         self.clear()
-        arcade.draw_text("Instructions Screen", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2,
-                        arcade.color.WHITE, font_size=50, anchor_x="center")
+        arcade.draw_text("Code Monkey has a project due tonight and hasn't even started yet! "
+                         "Help him finish the project, but make sure that he is "
+                         "taken care of. Any further delay will cause Code Monkey to fail.", 
+                        SCREEN_WIDTH / 2, SCREEN_HEIGHT - 100,
+                        arcade.color.WHITE, 
+                        font_size=20, font_name="Kenney Pixel Square",
+                        anchor_x="center", multiline=True, width=800)
         arcade.draw_text("Click to advance", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 75,
                         arcade.color.WHITE, font_size=20, anchor_x="center")
     
@@ -38,10 +47,10 @@ class InstructionsView(arcade.View):
 
 
 class GameOverView(arcade.View):
-    def __init__(self, condition):
+    def __init__(self, condition, texture):
         super().__init__()
         self.condition = condition
-        self.texture = arcade.load_texture("computer.png")
+        self.texture = texture
 
         arcade.set_viewport(0, SCREEN_WIDTH - 1, 0, SCREEN_HEIGHT - 1)
 
@@ -53,6 +62,49 @@ class GameOverView(arcade.View):
                             SCREEN_WIDTH / 2, SCREEN_HEIGHT - 60,
                             arcade.color.WHITE, 
                             font_size=20, 
+                            anchor_x="center", multiline=True, width=600)
+            arcade.draw_text("Click to replay", 
+                            SCREEN_WIDTH + 100, SCREEN_HEIGHT / 6,
+                            arcade.color.WHITE, 
+                            font_size=15, 
+                            anchor_x="center", multiline=True, width=600)
+        elif self.condition == 2:
+            self.texture.draw_sized(SCREEN_WIDTH / 4, SCREEN_HEIGHT / 4, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
+            arcade.draw_text("Code Monkey has stomach pains from not eating, and now is too hungry to eat. A fate far worse than death. "
+                             "He can't continue the project and fails...", 
+                            SCREEN_WIDTH / 2 - 30, SCREEN_HEIGHT - 60,
+                            arcade.color.WHITE, 
+                            font_size=20, 
+                            anchor_x="center", multiline=True, width=600)
+            arcade.draw_text("Click to replay", 
+                            SCREEN_WIDTH + 100, SCREEN_HEIGHT / 6,
+                            arcade.color.WHITE, 
+                            font_size=15, 
+                            anchor_x="center", multiline=True, width=600)
+        elif self.condition == 3:
+            self.texture.draw_sized(SCREEN_WIDTH /2, SCREEN_HEIGHT /2, SCREEN_WIDTH, SCREEN_HEIGHT)
+            arcade.draw_text("The lack of sleep has caused Code Monkey to be paranoid and develop night terrors.", 
+                            SCREEN_WIDTH / 2 - 30, SCREEN_HEIGHT - 60,
+                            arcade.color.WHITE, 
+                            font_size=20, 
+                            anchor_x="center", multiline=True, width=600)
+            arcade.draw_text("Click to replay", 
+                            SCREEN_WIDTH + 100, SCREEN_HEIGHT / 6,
+                            arcade.color.WHITE, 
+                            font_size=15, 
+                            anchor_x="center", multiline=True, width=600)
+        
+        elif self.condition == 0:
+            self.texture.draw_sized(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, SCREEN_WIDTH, SCREEN_HEIGHT)
+            arcade.draw_text("Congratulations!", 
+                            SCREEN_WIDTH / 2 - 100, SCREEN_HEIGHT - 60,
+                            arcade.color.WHITE, 
+                            font_size=20, 
+                            anchor_x="center", multiline=True, width=600)
+            arcade.draw_text("Click to replay", 
+                            SCREEN_WIDTH + 100, SCREEN_HEIGHT / 6,
+                            arcade.color.WHITE, 
+                            font_size=15, 
                             anchor_x="center", multiline=True, width=600)
 
     def on_mouse_press(self, x, y, button, modifiers):
@@ -102,22 +154,39 @@ class StatusBar(arcade.Sprite):
 
 
 class Player(arcade.Sprite):
+    def __init__(self, sprite, scale):
+        super().__init__()
+        self.sprite = sprite
+        self.scale = scale
+        self.textures = []
+
+        # Load a left facing texture and a right facing texture.
+        # flipped_horizontally=True will mirror the image we load.
+        texture = arcade.load_texture(sprite)
+        self.textures.append(texture)
+        texture = arcade.load_texture(sprite, flipped_horizontally=True)
+        self.textures.append(texture)
+
+        # By default, face right.
+        self.texture = texture
+
     def update(self):
         """ Move the player """
         # Move player.
         self.center_x += self.change_x
         self.center_y += self.change_y
 
-        # Check for out-of-bounds
-        if self.left < 0:
-            self.left = 0
-        elif self.right > SCREEN_WIDTH - 1:
-            self.right = SCREEN_WIDTH - 1
+        # Figure out if we should face left or right
+        if self.change_x < 0:
+            self.texture = self.textures[TEXTURE_LEFT]
+        elif self.change_x > 0:
+            self.texture = self.textures[TEXTURE_RIGHT]
 
-        if self.bottom < 0:
-            self.bottom = 0
-        elif self.top > SCREEN_HEIGHT - 1:
-            self.top = SCREEN_HEIGHT - 1
+        # Check for out-of-bounds
+        if self.left < 390:
+            self.left = 390
+        elif self.right > 1980:
+            self.right = 1980
 
 
 
@@ -222,21 +291,11 @@ class HackerGameView(arcade.View):
         self.using_bed_sprite.center_y = SCREEN_WIDTH / 2 - 190
         self.room_objects_list.append(self.using_bed_sprite)
 
-
         # Place the floor
         for x in range(0, 3000, 480):
             wall = arcade.Sprite("Floorboards.png", .25)
             wall.center_x = x
             wall.center_y = SCREEN_HEIGHT / 8
-            self.scene.add_sprite("Walls", wall)
-
-        # Put some crates on the ground
-        # This shows using a coordinate list to place sprites
-        coordinate_list = [[390, SCREEN_HEIGHT/4 + 1], [1980, SCREEN_HEIGHT/4 + 1]]
-        for coordinate in coordinate_list:
-            # Add a crate
-            wall = arcade.Sprite(":resources:images/tiles/boxCrate_double.png", 0.01)
-            wall.position = coordinate
             self.scene.add_sprite("Walls", wall)
         
         # Set up status bars
@@ -295,6 +354,7 @@ class HackerGameView(arcade.View):
     def on_update(self, delta_time):
         """ Movement and game logic """
         # Move the player
+        self.scene.update()
         self.physics_engine.update()
         # Position the camera
         self.center_camera_to_player()
@@ -303,15 +363,24 @@ class HackerGameView(arcade.View):
         self.update_status()
 
         if self.bar_list[0].cur_progress <= 0:
-            view = GameOverView(1)
+            view = GameOverView(1, arcade.load_texture("computer.png"))
+            self.window.show_view(view)
+        elif self.bar_list[1].cur_progress <= 0:
+            view = GameOverView(2, arcade.load_texture("CodeMonkey_Hungry.png"))
+            self.window.show_view(view)
+        elif self.bar_list[2].cur_progress <= 0:
+            view = GameOverView(3, arcade.load_texture("CodeMonkey_SleepDeprived.png"))
+            self.window.show_view(view)
+        elif self.bar_list[3].cur_progress >= 100:
+            view = GameOverView(0, arcade.load_texture("Passed.png"))
             self.window.show_view(view)
 
 
     def update_status(self):
         """ Update the status bars """
-        self.bar_list[0].cur_progress -= .05 * SPEED_MODIFIER
-        self.bar_list[1].cur_progress -= .03 * SPEED_MODIFIER
-        self.bar_list[2].cur_progress -= .01 * SPEED_MODIFIER
+        self.bar_list[0].cur_progress -= .06 * SPEED_MODIFIER
+        self.bar_list[1].cur_progress -= .04 * SPEED_MODIFIER
+        self.bar_list[2].cur_progress -= .02 * SPEED_MODIFIER
 
         # Check for bathroom collision
         colliding_bathroom = arcade.check_for_collision(self.player_sprite, self.bathroom_sprite)
@@ -321,7 +390,7 @@ class HackerGameView(arcade.View):
             self.bathroom_sprite.visible = False
             self.player_sprite.visible = False
             # Give the player more than what they lose, 6x as much
-            self.bar_list[0].cur_progress += .3 * SPEED_MODIFIER
+            self.bar_list[0].cur_progress += .36 * SPEED_MODIFIER
             # Cap at 100
             if self.bar_list[0].cur_progress >= 100:
                 self.bar_list[0].cur_progress = 100
@@ -339,7 +408,7 @@ class HackerGameView(arcade.View):
             self.fridge_sprite.visible = False
             self.player_sprite.visible = False
             # Give the player more than what they lose, 6x as much
-            self.bar_list[1].cur_progress += .18 * SPEED_MODIFIER
+            self.bar_list[1].cur_progress += .24 * SPEED_MODIFIER
             # Cap at 100
             if self.bar_list[1].cur_progress >= 100:
                 self.bar_list[1].cur_progress = 100
@@ -357,7 +426,7 @@ class HackerGameView(arcade.View):
             self.bed_sprite.visible = False
             self.player_sprite.visible = False
             # Give the player more than what they lose, 6x as much
-            self.bar_list[2].cur_progress += .06 * SPEED_MODIFIER
+            self.bar_list[2].cur_progress += .12 * SPEED_MODIFIER
             # Cap at 100
             if self.bar_list[2].cur_progress >= 100:
                 self.bar_list[2].cur_progress = 100
@@ -438,11 +507,11 @@ class HackerGameView(arcade.View):
         """ Primitive, but lets the progress bars stay within the screen """
         
         if self.left_pressed == True:
-            if self.bar_list.center[0] > 280:
-                self.bar_list.move(-PLAYER_MOVEMENT_SPEED, 0)
+            if self.bar_list.center[0] > 320:
+                self.bar_list.move(-PLAYER_MOVEMENT_SPEED * 2, 0)
         if self.right_pressed == True:
-            if self.bar_list.center[0] < 1728:
-                self.bar_list.move(PLAYER_MOVEMENT_SPEED, 0)
+            if self.bar_list.center[0] < 1712:
+                self.bar_list.move(PLAYER_MOVEMENT_SPEED * 2, 0)
 
 
 def main():
