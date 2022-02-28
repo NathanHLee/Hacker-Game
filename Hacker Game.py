@@ -8,7 +8,7 @@ DEFAULT_FONT_SIZE = 16
 SCREEN_TITLE = "Hacker Game"
 
 SPRITE_SCALING = 2
-SPEED_MODIFIER = 8 # Change to speed up the status progression
+SPEED_MODIFIER = 2 # Change to speed up the status progression
 PLAYER_MOVEMENT_SPEED = 3
 
 STATUS_NUMBER_OFFSET_X = 210
@@ -36,7 +36,17 @@ class InstructionsView(arcade.View):
                         arcade.color.WHITE, 
                         font_size=20, font_name="Kenney Pixel Square",
                         anchor_x="center", multiline=True, width=800)
-        arcade.draw_text("Click to advance", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 75,
+        arcade.draw_text("     Use 'SPACE' when on an object to interact",
+                        SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 60,
+                        arcade.color.WHITE, 
+                        font_size=20, font_name="Kenney Pixel Square",
+                        anchor_x="center", multiline=True, width=800)
+        arcade.draw_text("  Use the 'LEFT' and 'RIGHT' arrow keys to move.",
+                        SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 130,
+                        arcade.color.WHITE, 
+                        font_size=20, font_name="Kenney Pixel Square",
+                        anchor_x="center", multiline=True, width=800)
+        arcade.draw_text("Click to advance", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 4 - 100,
                         arcade.color.WHITE, font_size=20, anchor_x="center")
     
     def on_mouse_press(self, x, y, button, modifiers):
@@ -57,8 +67,9 @@ class GameOverView(arcade.View):
     def on_draw(self):
         self.clear()
         if self.condition == 1:
-            self.texture.draw_sized(SCREEN_WIDTH / 4, SCREEN_HEIGHT / 2, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
-            arcade.draw_text("Oh no", 
+            self.texture.draw_sized(SCREEN_WIDTH / 5, SCREEN_HEIGHT / 2, SCREEN_WIDTH / 2, SCREEN_HEIGHT - 100)
+            arcade.draw_text("It's OK. Accidents happen. If we look at the pros, Code Monkey has fresh sheets "
+                             "for his room not covered in Fritos.", 
                             SCREEN_WIDTH / 2, SCREEN_HEIGHT - 60,
                             arcade.color.WHITE, 
                             font_size=20, 
@@ -70,7 +81,7 @@ class GameOverView(arcade.View):
                             anchor_x="center", multiline=True, width=600)
         elif self.condition == 2:
             self.texture.draw_sized(SCREEN_WIDTH / 4, SCREEN_HEIGHT / 4, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
-            arcade.draw_text("Code Monkey has stomach pains from not eating, and now is too hungry to eat. A fate far worse than death. "
+            arcade.draw_text("Code Monkey has stomach pains from not eating, and now is too hungry to eat. "
                              "He can't continue the project and fails...", 
                             SCREEN_WIDTH / 2 - 30, SCREEN_HEIGHT - 60,
                             arcade.color.WHITE, 
@@ -363,7 +374,7 @@ class HackerGameView(arcade.View):
         self.update_status()
 
         if self.bar_list[0].cur_progress <= 0:
-            view = GameOverView(1, arcade.load_texture("computer.png"))
+            view = GameOverView(1, arcade.load_texture("CodeMonkey_Laundry.png"))
             self.window.show_view(view)
         elif self.bar_list[1].cur_progress <= 0:
             view = GameOverView(2, arcade.load_texture("CodeMonkey_Hungry.png"))
@@ -444,7 +455,7 @@ class HackerGameView(arcade.View):
             self.computer_sprite.visible = False
             self.player_sprite.visible = False
             # Give the player more than what they lose, 6x as much
-            self.bar_list[3].cur_progress += .02 * SPEED_MODIFIER
+            self.bar_list[3].cur_progress += .03 * SPEED_MODIFIER
             # Cap at 100
             if self.bar_list[3].cur_progress >= 100:
                 self.bar_list[3].cur_progress = 100
