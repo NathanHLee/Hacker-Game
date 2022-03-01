@@ -25,7 +25,7 @@ TEXTURE_RIGHT = 1
 class InstructionsView(arcade.View):
     def on_show(self):
         arcade.set_background_color(arcade.color.CHARLESTON_GREEN)
-        arcade.set_viewport(0, SCREEN_WIDTH, 0, SCREEN_HEIGHT)
+        # arcade.set_viewport(0, SCREEN_WIDTH, 0, SCREEN_HEIGHT)
     
     def on_draw(self):
         self.clear()
@@ -185,7 +185,6 @@ class Player(arcade.Sprite):
         """ Move the player """
         # Move player.
         self.center_x += self.change_x
-        self.center_y += self.change_y
 
         # Figure out if we should face left or right
         if self.change_x < 0:
